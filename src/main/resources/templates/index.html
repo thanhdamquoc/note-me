@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Note Me!</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>Note Me</h1>
+            <img src="https://avatars.githubusercontent.com/u/79950542?v=4" alt="potato" class="img-thumbnail" style="height: 70px"><br>
+            <span style="font-style: italic">A note-taking web application by Tee-Dawg</span><br>
+            <span style="font-style: italic">thanhdamquoc@gmail.com</span><br>
+        </div>
+        <div class="col">
+            <form>
+                <fieldset>
+                    <legend>Add new note</legend>
+                    <div class="row">
+                        <div class="col">Title</div>
+                        <div class="col"><input type="text" id="new-note-title"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col">Content</div>
+                        <div class="col"><input type="text" id="new-note-content"></div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary" onclick="addNewNote()">Submit</button>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+    <br>
+    <div id="main-content">
+    </div>
+    <!--    modal-->
+    <div class="modal" tabindex="-1" id="delete-confirm-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete confirmation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to remove this note?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-outline-danger" onclick="removeNote()">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj"
+        crossorigin="anonymous"></script>
+<script>
+window.onload = function () {
+    getNotes();
+}
+
+let url = "http://noteme-env.eba-iriceh4m.ap-southeast-1.elasticbeanstalk.com/api/v1/notes";
+let deleteId = -1;
+
+function getNotes() {
+    $.ajax({
+        type: "GET",
+        url: url,
+        success: function (notes) {
+            $('#main-content').html(getHtmlContentMultiple(notes));
+        }
+    })
+}
+
+function getHtmlContentMultiple(notes) {
+    let content = "";
+    for (let i = 0; i < notes.length; i++) {
+        let note = notes[i];
+        content += getHtmlContentSingle(note);
+    }
+    return content;
+}
+
+function getHtmlContentSingle(note) {
+    content =
+    `<div id="main-content">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">${note.title}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">${note.date}</h6>
+                <p class="card-text">${note.content}</p>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="showDeleteConfirm(${note.id})">Remove</button>
+            </div>
+        </div>
+    </div><br>`
+    return content;
+}
+
+function removeNote() {
+    let deleteUrl = url + "/" + deleteId;
+    $.ajax({
+        type: "DELETE",
+        url: deleteUrl,
+        success: function () {
+            getNotes();
+            hideDeleteConfirm();
+        }
+    })
+}
+
+function showDeleteConfirm(id) {
+    deleteId = id;
+    $('#delete-confirm-modal').modal('show');
+}
+
+function hideDeleteConfirm() {
+    $('#delete-confirm-modal').modal('hide');
+}
+
+function addNewNote() {
+    let newNote = {
+        title: $('#new-note-title').val(),
+        content: $('#new-note-content').val()
+    }
+    $.ajax({
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        type: "POST",
+        data: JSON.stringify(newNote),
+        url: url,
+        success: function () {
+            getNotes();
+        }
+    })
+    clearNoteForm();
+}
+
+function clearNoteForm() {
+    $('#new-note-title').val("")
+    $('#new-note-content').val("")
+}
+
+</script>
+</body>
+</html>
